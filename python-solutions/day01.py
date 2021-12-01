@@ -23,5 +23,21 @@ def part1():
 
     print(f"Day 01, part 1: {increases}")
 
+def part2():
+
+    window = measurements[:3]
+    increases = 0
+    for measurement in measurements[3:]:
+        new_window = window[1:]
+        new_window.append(measurement)
+
+        if sum(new_window) > sum(window):
+            increases += 1
+
+        window = new_window
+
+    print(f"Day 01, part 2: {increases}")
+
 
 part1()
+part2()
