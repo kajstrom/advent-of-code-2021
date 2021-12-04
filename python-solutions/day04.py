@@ -29,35 +29,28 @@ def read_input() -> Tuple[List[int], List[List[List[Tuple[int, bool]]]]]:
 
 
 def take_col(board, i):
-    cols = []
-
-    for row in board:
-        cols.append(row[i])
-
-    return cols
+    return list(map(lambda r: r[i], board))
 
 
 def board_wins(board) -> bool:
     rows = len(board)
     cols = len(board[0])
 
-    for row_i in range(0, rows):
-        row_matches = list(filter(lambda v: v[1] is True, board[row_i]))
+    for row in board:
+        row_matches = list(filter(lambda v: v[1] is True, row))
 
         if len(row_matches) == cols:
-            print(f"Winning row {row_matches}")
             return True
 
     for col_i in range(0, cols):
         column = take_col(board, col_i)
-
         col_matches = list(filter(lambda v: v[1] is True, column))
 
         if len(col_matches) == rows:
-            print(f"Winning column {col_matches}")
             return True
 
     return False
+
 
 def play_bingo(numbers, boards):
     for number in numbers:
@@ -71,6 +64,26 @@ def play_bingo(numbers, boards):
             if board_wins(board):
                 return board, number
 
+
+def find_last_winning_board(numbers, boards):
+    number = numbers[0]
+    for board in boards:
+        for board_row in board:
+            for i in range(0, len(board_row)):
+                if board_row[i][0] == number:
+                    board_row[i] = (number, True)
+
+    boards_for_next_round = []
+    for board in boards:
+        if board_wins(board) and len(boards) == 1:
+            return board, number
+
+        if not board_wins(board):
+            boards_for_next_round.append(board)
+
+    return find_last_winning_board(numbers[1:], boards_for_next_round)
+
+
 def score_board(board, last_number):
     flat_board = reduce(iconcat, board, [])
     unmarked_numbers = filter(lambda n: n[1] is False, flat_board)
@@ -78,14 +91,24 @@ def score_board(board, last_number):
 
     return sum_of_unmarked * last_number
 
+
 def part1():
     numbers, boards = read_input()
 
     winning_board, last_number = play_bingo(numbers, boards)
-    print(f"Number {last_number} Winning board {winning_board}")
 
     score = score_board(winning_board, last_number)
-    print(f"Board score is {score}")
+    print(f"Day 04, part 1: {score}")
+
+
+def part2():
+    numbers, boards = read_input()
+
+    last_winning_board, last_number = find_last_winning_board(numbers, boards)
+
+    score = score_board(last_winning_board, last_number)
+    print(f"Day 04, part 2: {score}")
 
 
 part1()
+part2()
