@@ -15,3 +15,6 @@ module Utils
     timer.Stop()
     let duration = string timer.ElapsedMilliseconds
     printfn "Duration %sms" duration
+
+  let charListToString (list: list<char>): string = System.String.Concat(list)
+  let binaryStringToInt32 (binary: string): int = System.Convert.ToInt32(binary, 2)

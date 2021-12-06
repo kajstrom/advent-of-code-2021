@@ -13,3 +13,4 @@ _[Bb]uild/
 [Dd]eploy/
 _[Dd]eploy/
 .ionide
+.fake
