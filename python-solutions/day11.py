@@ -52,11 +52,6 @@ def flash(octopuses, coord):
     return total_flashes
 
 
-def visualize(octopuses):
-    for row in octopuses:
-        print(row)
-
-
 def part1():
     octopuses = read_input("inputs/day11.txt")
 
@@ -77,6 +72,30 @@ def part1():
     print(f"Day 11, part 1: {total_flashes}")
 
 
+def part2():
+    octopuses = read_input("inputs/day11.txt")
+    expected_flashes = len(octopuses) * len(octopuses[0])
+    flashes = 0
+
+    step = 0
+    while expected_flashes != flashes:
+        # increase energy level
+        for x in range(0, len(octopuses)):
+            for y in range(0, len(octopuses[x])):
+                octopuses[x][y] += 1
+
+        # flash
+        for x in range(0, len(octopuses)):
+            for y in range(0, len(octopuses[x])):
+                octopus = octopuses[x][y]
+                if octopus > 9:
+                    flashes = flash(octopuses, (x, y))
+
+        step += 1
+
+    print(f"Day 11, part 2: {step}")
+
 
 if __name__ == '__main__':
     part1()
+    part2()
