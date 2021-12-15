@@ -86,7 +86,6 @@ def calculate_risk_level_to_target(start, target):
         current.visited = True
 
         if current.coords == target:
-            print("Target reached!")
             shortest_path, total_risk = backtrack(current)
             return total_risk
 
@@ -112,7 +111,36 @@ def part1():
     print(f"Day 15, part 1: {total_risk}")
 
 
+def expand_input(input):
+    expanded = []
 
+    for x in range(0, 5):
+        for row in input:
+            new_row = []
+            for y in range(0, 5):
+                for c in row:
+                    risk = c + x + y
+                    if risk > 9:
+                        risk = risk % 9
+
+                    new_row.append(risk)
+            expanded.append(new_row)
+
+    return expanded
+
+
+def part2():
+    input = read_input("inputs/day15.txt")
+    expanded_input = expand_input(input)
+
+    cavern = input_to_graph(expanded_input)
+    start = cavern[(0, 0)]
+    start.dist = 0
+
+    target = (len(expanded_input) - 1, len(expanded_input[0]) - 1)
+    total_risk = calculate_risk_level_to_target(start, target)
+
+    print(f"Day 15, part 2: {total_risk}")
 
 
 
@@ -120,3 +148,4 @@ def part1():
 
 if __name__ == '__main__':
     part1()
+    part2()
