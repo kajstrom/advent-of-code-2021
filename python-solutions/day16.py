@@ -2,9 +2,11 @@ import re
 from functools import reduce
 from operator import mul
 
+
 def read_input(file):
     with open(file) as f:
         return f.read()
+
 
 conversion_rules = {
     "0": "0000",
@@ -85,12 +87,7 @@ def decode_operation_subpacket(bin_str, pointer):
 
         pointer_at_start = pointer
         while pointer - pointer_at_start != length:
-            s_version, s_type, ignore = decode_header(bin_str, pointer)
-            if s_type == 4:
-                subpacket, pointer = decode_literal_subpacket(bin_str, pointer)
-            else:
-                subpacket, pointer = decode_operation_subpacket(bin_str, pointer)
-
+            subpacket, pointer = decode_subpacket(bin_str, pointer)
             packet["subpackets"].append(subpacket)
     elif length_type_id == "1":
         length = bin_str[pointer:pointer + 11]
@@ -103,15 +100,18 @@ def decode_operation_subpacket(bin_str, pointer):
         }
 
         for _ in range(0, length):
-            s_version, s_type, ignore = decode_header(bin_str, pointer)
-            if s_type == 4:
-                subpacket, pointer = decode_literal_subpacket(bin_str, pointer)
-            else:
-                subpacket, pointer = decode_operation_subpacket(bin_str, pointer)
-
+            subpacket, pointer = decode_subpacket(bin_str, pointer)
             packet["subpackets"].append(subpacket)
 
     return packet, pointer
+
+
+def decode_subpacket(bin_str, pointer):
+    version, type, ignore = decode_header(bin_str, pointer)
+    if type == 4:
+        return decode_literal_subpacket(bin_str, pointer)
+    else:
+        return decode_operation_subpacket(bin_str, pointer)
 
 
 def decode_packets(bin_str):
@@ -119,77 +119,19 @@ def decode_packets(bin_str):
     packets = []
 
     while pointer < len(bin_str):
-        version, type, pointer = decode_header(bin_str, pointer)
+        version, type, ignore = decode_header(bin_str, pointer)
 
         if type == 4:
-            last_group_reached = False
-            value = ""
-            while not last_group_reached:
-                group = bin_str[pointer:pointer+5]
-                if group[0] == "0":
-                    last_group_reached = True
-
-                value += group[1:]
-
-                pointer += 5
-
-            packets.append({
-                "version": version,
-                "type": type,
-                "value": int(value, 2)
-            })
-
+            packet, pointer = decode_subpacket(bin_str, pointer)
+            packets.append(packet)
             pointer += 4 - (pointer % 4)
         else:
-            length_type_id = bin_str[pointer]
-            pointer += 1
-
-            if length_type_id == "0":
-                length = int(bin_str[pointer:pointer+15], 2)
-                pointer += 15
-
-                packet = {
-                    "version": version,
-                    "type": type,
-                    "subpackets": []
-                }
-
-                pointer_at_start = pointer
-                while pointer - pointer_at_start != length:
-                    s_version, s_type, ignore = decode_header(bin_str, pointer)
-                    if s_type == 4:
-                        subpacket, pointer = decode_literal_subpacket(bin_str, pointer)
-                    else:
-                        subpacket, pointer = decode_operation_subpacket(bin_str, pointer)
-
-                    packet["subpackets"].append(subpacket)
-
-                packets.append(packet)
-            elif length_type_id == "1":
-                length = bin_str[pointer:pointer+11]
-                pointer += 11
-                length = int(length, 2)
-                packet = {
-                    "version": version,
-                    "type": type,
-                    "subpackets": []
-                }
-
-                for _ in range(0, length):
-                    s_version, s_type, ignore = decode_header(bin_str, pointer)
-                    if s_type == 4:
-                        subpacket, pointer = decode_literal_subpacket(bin_str, pointer)
-                    else:
-                        subpacket, pointer = decode_operation_subpacket(bin_str, pointer)
-
-                    packet["subpackets"].append(subpacket)
-
-                packets.append(packet)
+            packet, pointer = decode_subpacket(bin_str, pointer)
+            packets.append(packet)
 
         if re.match("0+", bin_str[pointer:]):
             #Terminate if there are only zeroes in the remaining bin_str
             pointer = len(bin_str)
-
 
     return packets
 
@@ -205,6 +147,7 @@ def sum_version_numbers(packets):
                     version_sum += sum_version_numbers(sub["subpackets"])
 
     return version_sum
+
 
 def value_of(packet):
     type = packet["type"]
