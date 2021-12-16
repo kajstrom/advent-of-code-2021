@@ -44,11 +44,38 @@ class Day16TestCase(unittest.TestCase):
         packets = decode_packets(hex_to_bin("A0016C880162017C3686B18A3D4780"))
         self.assertEqual(31, sum_version_numbers(packets))
 
-    def test_part1_input(self):
-        packets = decode_packets(hex_to_bin(read_input("inputs/day16.txt")))
-        summed = sum_version_numbers(packets)
+    def test_value_of(self):
+        packets = decode_packets(hex_to_bin("C200B40A82"))
+        self.assertEqual(3, value_of(packets[0]))
 
-        self.assertEqual(986, summed)
+        packets = decode_packets(hex_to_bin("04005AC33890"))
+        self.assertEqual(54, value_of(packets[0]))
+
+        packets = decode_packets(hex_to_bin("880086C3E88112"))
+        self.assertEqual(7, value_of(packets[0]))
+
+        packets = decode_packets(hex_to_bin("CE00C43D881120"))
+        self.assertEqual(9, value_of(packets[0]))
+
+        packets = decode_packets(hex_to_bin("D8005AC2A8F0"))
+        self.assertEqual(1, value_of(packets[0]))
+
+        packets = decode_packets(hex_to_bin("F600BC2D8F"))
+        self.assertEqual(0, value_of(packets[0]))
+
+        packets = decode_packets(hex_to_bin("9C005AC2F8F0"))
+        self.assertEqual(0, value_of(packets[0]))
+
+        packets = decode_packets(hex_to_bin("9C0141080250320F1802104A08"))
+        self.assertEqual(1, value_of(packets[0]))
+
+
+    def test_actual_input(self):
+        packets = decode_packets(hex_to_bin(read_input("inputs/day16.txt")))
+
+        self.assertEqual(986, sum_version_numbers(packets))
+        self.assertEqual(18234816469452, value_of(packets[0]))
+
 
 
 if __name__ == '__main__':
