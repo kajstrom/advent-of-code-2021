@@ -205,6 +205,26 @@ def add_all(snailfishes):
     return current
 
 
+def largest_combination_magnitude(snailfishes):
+    magnitudes = []
+    largest_magnitude = 0
+    for current_s in snailfishes:
+        for t_s in snailfishes:
+
+            if current_s != t_s:
+                current = Node()
+                build_tree(current_s, current)
+                t = Node()
+                build_tree(t_s, t)
+
+                combined1 = add(current, t)
+                mag = combined1.magnitude()
+                magnitudes.append(mag)
+                if mag > largest_magnitude:
+                    largest_magnitude = mag
+
+    return largest_magnitude
+
 def build_tree(pairs, root: Node):
     left, right = pairs
 
@@ -227,3 +247,4 @@ if __name__ == '__main__':
     snailfishes = read_input("inputs/day18.txt")
     final = add_all(snailfishes)
     print(f"Day 18, part 1: {final.magnitude()}")
+    print(f"Day 18, part 2 {largest_combination_magnitude(snailfishes)}")
