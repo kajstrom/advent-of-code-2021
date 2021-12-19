@@ -1,9 +1,68 @@
 import math
 
-
 def read_input(file):
     with open(file) as f:
         return list(map(eval, f.read().splitlines()))
+
+class Node:
+    def __init__(self):
+        self.parent = None
+        self.left = None
+        self.right = None
+        self.value = None
+
+    def set_left_child(self, left):
+        self.left = left
+        left.parent = self
+
+    def set_right_child(self, right):
+        self.right = right
+        right.parent = self
+
+    def has_children(self):
+        return self.left is not None and self.right is not None
+
+    def is_regular(self):
+        return self.value is not None
+
+    def is_branch(self):
+        return self.value is None
+
+    def replace(self, replacement):
+        if self.parent.left is self:
+            self.parent.set_left_child(replacement)
+        else:
+            self.parent.set_right_child(replacement)
+
+    def magnitude(self):
+        #left_mag = 0
+        if self.left.is_branch():
+            left_mag = self.left.magnitude()
+        else:
+            left_mag = self.left.value
+
+        #right_mag = 0
+        if self.right.is_branch():
+            right_mag = self.right.magnitude()
+        else:
+            right_mag = self.right.value
+
+        return 3 * left_mag + 2 * right_mag
+
+    def to_list(self):
+        if self.is_branch():
+            return [
+                self.left.to_list(),
+                self.right.to_list()
+            ]
+        else:
+            return self.value
+
+    def __str__(self):
+        if self.is_branch():
+            return f"Left: {self.left} Right: {self.right}"
+
+        return f"Value {self.value}"
 
 
 def is_list(x):
@@ -13,217 +72,179 @@ def is_list(x):
 def is_int(x):
     return type(x) == int
 
-
-def get_value(pair, path: list[int]):
-    current_pair = pair
-    for i in path:
-        current_pair = current_pair[i]
-
-    return current_pair
+def is_node(x):
+    return isinstance(x, Node)
 
 
-def set_value(pair, path: list[int], value):
-    current_pair = pair
-    path_to_parent = path.copy()
-    last_idx = path_to_parent.pop()
-    for i in path_to_parent:
-        current_pair = current_pair[i]
+def find_explodable(root, depth=1):
+    if root.left.is_branch():
+        if depth == 4:
+            return root.left
 
-    current_pair[last_idx] = value
+        to_explode = find_explodable(root.left, depth + 1)
+        if to_explode is not None:
+            return to_explode
 
+    if root.right.is_branch():
+        if depth == 4:
+            return root.right
 
-def find_left_regular_number(pair: list, path: list[int]):
-    current_path = path.copy()
-    current_path.pop()
-
-    queue = []
-
-    if path[-1] != 0:
-        # queue lefthand neighbors
-            for i in range(path[-1] - 1, -1, -1):
-                queue.append(current_path + [i])
-
-    while current_path:
-        to_queue_idx = current_path.pop()
-        for i in range(to_queue_idx - 1, -1, -1):
-            #queue all lefhand side branches
-            queue.append(current_path + [i])
-
-    while queue:
-        current_path = queue.pop(0)
-        #print("From queue", current_path)
-
-        value = get_value(pair, current_path)
-
-        if is_int(value):
-            return current_path
-
-        if is_list(value):
-            for ci in range(len(value) - 1, -1, -1):
-                #print(ci)
-                if is_int(value[ci]):
-                    return current_path + [ci]
-
-            for ci in range(0, len(value)):
-                if is_list(value[ci]):
-                    queue.insert(0, current_path + [ci])
+        return find_explodable(root.right, depth + 1)
 
     return None
 
 
-def find_right_regular_number(pair: list, path: list[int]):
-    current_path = path.copy()
-    current_path.pop()
+def flatten(tree: Node, nodes):
+    nodes.append(tree)
 
-    queue = []
-    #queue righthand neighbors
-    for i in range(path[-1] + 1, len(get_value(pair, current_path))):
-        queue.append(current_path + [i])
+    if tree.left.is_branch():
+        flatten(tree.left, nodes)
+    else:
+        nodes.append(tree.left)
 
-    #queue righthand branches
-    while current_path:
-        to_queue_idx = current_path.pop()
-        for i in range(to_queue_idx + 1, len(get_value(pair, current_path))):
-            queue.append(current_path + [i])
+    if tree.right.is_branch():
+        flatten(tree.right, nodes)
+    else:
+        nodes.append(tree.right)
 
-    while queue:
-        current_path = queue.pop(0)
-        value = get_value(pair, current_path)
+    return nodes
 
-        if is_int(value):
-            return current_path
 
-        if is_list(value):
-            for ci in range(0, len(value)):
-                if is_int(value[ci]):
-                    return current_path + [ci]
+def find_left_regular(root, until):
+    nodes = flatten(root, [])
+    stop_at = nodes.index(until)
+    left_nodes = nodes[:stop_at]
+    left_nodes = reversed(left_nodes)
 
-            for ci in range(len(value) - 1, -1, -1):
-                if is_list(value[ci]):
-                    queue.insert(0, current_path + [ci])
-
+    for node in left_nodes:
+        if node.is_regular():
+            return node
 
     return None
 
 
-def find_explodable(pair, path):
-    queue = []
-    for i in range(0, len(pair)):
-        queue.append([i])
+def find_right_regular(root, start):
+    nodes = flatten(root, [])
+    start_from = nodes.index(start)
+    right_nodes = nodes[start_from + 3:]
 
-    while queue:
-        current_path = queue.pop(0)
-        value = get_value(pair, current_path)
-
-        if len(current_path) == 4:
-            if is_list(value):
-                return current_path
-
-        if is_list(value):
-            for ci in range(len(value) - 1, -1, -1):
-                queue.insert(0, current_path + [ci])
+    for node in right_nodes:
+        if node.is_regular():
+            return node
 
     return None
 
+def explode(root):
+    to_explode = find_explodable(root)
+    if to_explode is None:
+        return False
 
-def find_splittable(pair):
-    queue = []
-    for i in range(0, len(pair)):
-        queue.append([i])
+    left_regular = find_left_regular(root, to_explode)
+    right_regular = find_right_regular(root, to_explode)
 
-    #print(queue)
-    while queue:
-        current_path = queue.pop(0)
-        #print(current_path)
-        value = get_value(pair, current_path)
-        #print("Value", value)
+    if left_regular is not None:
+        left_regular.value += to_explode.left.value
 
-        if is_int(value) and value >= 10:
-            return current_path
+    if right_regular is not None:
+        right_regular.value += to_explode.right.value
 
-        if is_list(value):
-            for ci in range(0, len(value)):
-                if is_int(value[ci]) and value[ci] >= 10:
-                    return current_path + [ci]
+    exploded = Node()
+    exploded.value = 0
+    to_explode.replace(exploded)
 
-            for ci in range(len(value) - 1, -1, -1):
-                if is_list(value[ci]):
-                    queue.insert(0, current_path + [ci])
+    return True
 
-    return None
+def split(root):
+    nodes = flatten(root, [])
+    for node in nodes:
+        if node.is_regular():
+            if node.value >= 10:
+                splitted = Node()
+                left = Node()
+                right = Node()
 
+                left.value = math.floor(node.value / 2)
+                right.value = math.ceil(node.value / 2)
 
-def explode(top_pair):
-    path_to_explode = find_explodable(top_pair, [])
-    can_explode = path_to_explode is not None
+                splitted.set_left_child(left)
+                splitted.set_right_child(right)
 
-    print(path_to_explode)
-    if can_explode:
-        left_reg_path = find_left_regular_number(top_pair, path_to_explode)
-        right_reg_path = find_right_regular_number(top_pair, path_to_explode)
-        left, right = get_value(top_pair, path_to_explode)
-        print(left, right)
+                node.replace(splitted)
+                return True
 
-        if left_reg_path is not None:
-            left_reg = get_value(top_pair, left_reg_path)
-            set_value(top_pair, left_reg_path, left_reg + left)
+    return False
 
-        #print(right_reg_path)
-        if right_reg_path is not None:
-            right_reg = get_value(top_pair, right_reg_path)
-            #print(right_reg)
-            set_value(top_pair, right_reg_path, right_reg + right)
+def add(tree_a, tree_b):
+    root = Node()
+    root.set_left_child(tree_a)
+    root.set_right_child(tree_b)
 
-        set_value(top_pair, path_to_explode, 0)
-
-    return top_pair, can_explode
-
-
-def split(top_pair):
-    path_to_split = find_splittable(top_pair)
-    can_split = path_to_split is not None
-
-    if can_split:
-        value = get_value(top_pair, path_to_split)
-        left = math.floor(value / 2)
-        right = math.ceil(value / 2)
-        set_value(top_pair, path_to_split, [left, right])
-
-    return top_pair, can_split
-
-def add(a, b):
-    ab = [a, b]
-
-    step = 1
     while True:
-        #print(f"Step {step}")
-        step += 1
-
-        ab, exploded = explode(ab)
+        exploded = explode(root)
         if exploded:
-            print("Exploded")
             continue
 
-        ab, splitted = split(ab)
-
+        splitted = split(root)
         if splitted:
-            print("Splitted")
             continue
 
-        if not exploded and not splitted:
-            #print("No exploding or splitting possible")
-            break
-
-    return ab
+        return root
 
 
-def sum_all(snailfishes):
-    current = snailfishes[0]
-    for next in snailfishes[1:]:
-        current = add(current, next)
+def add_all(snailfishes):
+    trees = []
+    for sf in snailfishes:
+        root = Node()
+        build_tree(sf, root)
+        trees.append(root)
+
+    current = trees[0]
+    for t in trees[1:]:
+        current = add(current, t)
 
     return current
 
 
+def largest_combination_magnitude(snailfishes):
+    magnitudes = []
+    largest_magnitude = 0
+    for current_s in snailfishes:
+        for t_s in snailfishes:
+
+            if current_s != t_s:
+                current = Node()
+                build_tree(current_s, current)
+                t = Node()
+                build_tree(t_s, t)
+
+                combined1 = add(current, t)
+                mag = combined1.magnitude()
+                magnitudes.append(mag)
+                if mag > largest_magnitude:
+                    largest_magnitude = mag
+
+    return largest_magnitude
+
+def build_tree(pairs, root: Node):
+    left, right = pairs
+
+    left_node = Node()
+    if is_list(left):
+        build_tree(left, left_node)
+    else:
+        left_node.value = left
+
+    right_node = Node()
+    if is_list(right):
+        build_tree(right, right_node)
+    else:
+        right_node.value = right
+
+    root.set_left_child(left_node)
+    root.set_right_child(right_node)
+
 if __name__ == '__main__':
-    print(read_input("inputs/day18.txt"))
+    snailfishes = read_input("inputs/day18.txt")
+    final = add_all(snailfishes)
+    print(f"Day 18, part 1: {final.magnitude()}")
+    print(f"Day 18, part 2 {largest_combination_magnitude(snailfishes)}")
