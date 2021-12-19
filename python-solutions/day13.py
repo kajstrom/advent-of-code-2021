@@ -4,7 +4,6 @@ def read_input(file):
         folds = []
         parse_dots = True
         for line in f.read().splitlines():
-            print(line)
             if len(line) < 3:
                 parse_dots = False
                 continue
@@ -46,22 +45,53 @@ def fold_x(along, dot):
 
     return along - diff_to_fold, dot[1]
 
-def first_fold_only(folds, dots):
-    first_fold = folds[0]
-    folded_dots = []
-    for dot in dots:
-        value = first_fold["value"]
-        if first_fold["direction"] == "y":
-            folded_dots.append(fold_y(value, dot))
-        else:
-            folded_dots.append(fold_x(value, dot))
-
-    return folded_dots
-
 def count_visible(dots):
     return len(set(dots))
 
+def fold(folds, dots):
+    folded = dots
+    for fold in folds:
+        new_folded = []
+        for dot in folded:
+            value = fold["value"]
+            if fold["direction"] == "y":
+                new_folded.append(fold_y(value, dot))
+            else:
+                new_folded.append(fold_x(value, dot))
+
+        folded = new_folded
+
+    return folded
+
+def visualize(dots):
+    unique_dots = list(set(dots))
+    max_x = 0
+    max_y = 0
+    for dot in unique_dots:
+        x, y = dot
+        if x > max_x:
+            max_x = x
+
+        if y > max_y:
+            max_y = y
+
+    visual = ""
+    for y in range(0, max_y + 1):
+        row = ""
+        for x in range(0, max_x + 1):
+            if (x, y) in unique_dots:
+                row += "#"
+            else:
+                row += " "
+
+        visual += row + "\n"
+
+    return visual
+
 if __name__ == '__main__':
     dots, folds = read_input("inputs/day13.txt")
-    folded = first_fold_only(folds, dots)
-    print(f"Day 13, part 1: {count_visible(folded)}")
+    after_first = fold([folds[0]], dots)
+    print(f"Day 13, part 1: {count_visible(after_first)}")
+    folded = fold(folds, dots)
+    print(f"Day 13, part 2:")
+    print(visualize(folded))

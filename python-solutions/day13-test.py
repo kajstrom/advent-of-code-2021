@@ -13,9 +13,13 @@ class Day13TestCase(unittest.TestCase):
 
     def test_example(self):
         dots, folds = read_input("inputs/day13-example.txt")
-        folded_dots = first_fold_only(folds, dots)
+        folded_dots = fold([folds[0]], dots)
         self.assertEqual(17, count_visible(folded_dots))
 
+    def test_example2(self):
+        dots, folds = read_input("inputs/day13-example.txt")
+        folded = fold(folds, dots)
+        self.assertEqual(16, count_visible(folded))
 
 if __name__ == '__main__':
     unittest.main()
